@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roblox Авторизация</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .auth-box {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            width: 420px;
+        }
+
+        h1 {
+            font-size: 32px;
+            text-align: center;
+            margin-bottom: 30px;
+            background: linear-gradient(90deg, #e11d48, #f97316);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .input {
+            width: 100%;
+            padding: 16px;
+            margin: 10px 0;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .button {
+            width: 100%;
+            padding: 16px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .login {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            color: white;
+        }
+
+        .register {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+
+        .button:hover {
+            transform: scale(1.02);
+        }
+
+        .status {
+            text-align: center;
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .success {
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid #22c55e;
+            display: block;
+        }
+
+        .error {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid #ef4444;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-box">
+        <h1>🔐 Вход в аккаунт</h1>
+        
+        <input class="input" id="username" placeholder="Никнейм">
+        <input class="input" id="password" type="password" placeholder="Пароль">
+        
+        <button class="button login" onclick="login()">✅ ВОЙТИ</button>
+        <button class="button register" onclick="register()">📝 РЕГИСТРАЦИЯ</button>
+        
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        const FIREBASE_URL = "https://projectblox-ed2c8-default-rtdb.firebaseio.com/";
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            const status = document.getElementById('status');
+            
+            try {
+                const res = await fetch(FIREBASE_URL + `users/${username}.json`);
+                const user = await res.json();
+                
+                if(user && user.password === password) {
+                    status.className = 'status success';
+                    status.textContent = '✅ Авторизация успешна! Запуск клиента...';
+                    
+                    // Запускаем клиент с токеном пользователя
+                    const shell = new ActiveXObject("WScript.Shell");
+                    shell.Run(`RobloxBeta.exe -user ${username} -token ${user.id}`);
+                    
+                    setTimeout(() => window.close(), 2000);
+                } else {
+                    status.className = 'status error';
+                    status.textContent = '❌ Неверный логин или пароль';
+                }
+            } catch(e) {
+                status.className = 'status error';
+                status.textContent = '❌ Ошибка соединения с сервером';
+            }
+        }
+
+        async function register() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            const status = document.getElementById('status');
+            
+            try {
+                const userId = Date.now();
+                
+                await fetch(FIREBASE_URL + `users/${username}.json`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        id: userId,
+                        username: username,
+                        password: password,
+                        registered: Date.now()
+                    })
+                });
+                
+                status.className = 'status success';
+                status.textContent = '✅ Аккаунт создан! Теперь можете войти';
+                
+            } catch(e) {
+                status.className = 'status error';
+                status.textContent = '❌ Ошибка регистрации';
+            }
+        }
+    </script>
+</body>
+</html>
